@@ -41,18 +41,26 @@ export default function App() {
   const [editingSubtask, setEditingSubtask] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
+  
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState("Normal");
   const [dueDate, setDueDate] = useState("");
   const titleInputRef = useRef(null);
 
-  // Estados para o formulário de sub-tarefas condicional
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
   const [tempSubtasks, setTempSubtasks] = useState([]);
   const [currentSubtaskTitle, setCurrentSubtaskTitle] = useState('');
   const [currentSubtaskDueDate, setCurrentSubtaskDueDate] = useState('');
   
   const today = new Date().toISOString().split('T')[0];
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -71,9 +79,8 @@ export default function App() {
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch("/api/tasks", {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: getAuthHeaders()
       });
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
@@ -81,6 +88,7 @@ export default function App() {
     } catch (e) {
       console.error("Falha ao buscar as tarefas:", e);
       setNotification({ message: "Não foi possível carregar as tarefas.", type: 'error' });
+      setIsLoggedIn(false);
     }
   };
 
@@ -151,6 +159,7 @@ export default function App() {
         return (priorityValues[a.priority] || 3) - (priorityValues[b.priority] || 3);
       }
       if (sortBy === 'vencimento') {
+        // Trata 'Sem vencimento' como a última opção na ordenação
         if (a.due_date === 'Sem vencimento' && b.due_date === 'Sem vencimento') return 0;
         if (a.due_date === 'Sem vencimento') return 1;
         if (b.due_date === 'Sem vencimento') return -1;
@@ -183,7 +192,7 @@ export default function App() {
 
     const mainTaskRes = await fetch("/api/tasks", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ title, priority, due_date: dueDate }),
     });
 
@@ -200,7 +209,7 @@ export default function App() {
         for (const sub of tempSubtasks) {
             const subTaskRes = await fetch(`/api/tasks/${newMainTask.id}/subtasks`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ title: sub.title, due_date: sub.due_date }),
             });
             if (subTaskRes.ok) {
@@ -226,7 +235,10 @@ export default function App() {
 
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return;
-    await fetch(`/api/tasks/${taskToDelete.id}`, { method: "DELETE" });
+    await fetch(`/api/tasks/${taskToDelete.id}`, { 
+      method: "DELETE",
+      headers: getAuthHeaders()
+    });
     setAllTasks(allTasks.filter((t) => t.id !== taskToDelete.id));
     setNotification({ message: `Tarefa "${taskToDelete.title}" excluída.`, type: 'success' });
     setTaskToDelete(null);
@@ -235,7 +247,7 @@ export default function App() {
   const toggle = async (id, completed) => {
     await fetch(`/api/tasks/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ completed: !completed }),
     });
     setAllTasks(
@@ -256,7 +268,7 @@ export default function App() {
   const handleUpdateTask = async (id, updatedData) => {
     const res = await fetch(`/api/tasks/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(updatedData),
     });
 
@@ -278,7 +290,7 @@ export default function App() {
     
     const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ title: subtaskTitle }),
     });
 
@@ -297,7 +309,7 @@ export default function App() {
   const handleToggleSubtask = async (subtaskId, completed, taskId) => {
     await fetch(`/api/subtasks/${subtaskId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ completed }),
     });
 
@@ -309,7 +321,10 @@ export default function App() {
   };
 
   const handleDeleteSubtask = async (subtaskId, taskId) => {
-    await fetch(`/api/subtasks/${subtaskId}`, { method: 'DELETE' });
+    await fetch(`/api/subtasks/${subtaskId}`, { 
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
 
     setAllTasks(allTasks.map(task => 
       task.id === taskId 
@@ -322,7 +337,7 @@ export default function App() {
     const taskId = editingSubtask.task_id;
     const res = await fetch(`/api/subtasks/${subtaskId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
 
@@ -339,19 +354,19 @@ export default function App() {
     }
   };
 
-    if (!isLoggedIn) {
-        return (
-          <div className="auth-page-container">
-            <div className="auth-forms-container">
-              {showRegisterForm ? (
-                <Register onRegisterSuccess={() => setShowRegisterForm(false)} onSwitchToLogin={() => setShowRegisterForm(false)} />
-              ) : (
-                <Login onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setShowRegisterForm(true)} />
-              )}
-            </div>
-          </div>
-        );
-      }
+  if (!isLoggedIn) {
+    return (
+      <div className="auth-page-container">
+        <div className="auth-forms-container">
+          {showRegisterForm ? (
+            <Register onRegisterSuccess={() => setShowRegisterForm(false)} onSwitchToLogin={() => setShowRegisterForm(false)} />
+          ) : (
+            <Login onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setShowRegisterForm(true)} />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="main-container">
@@ -576,7 +591,7 @@ export default function App() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </motion.li>
+                </motion.li>
                 );
               })}
             </AnimatePresence>

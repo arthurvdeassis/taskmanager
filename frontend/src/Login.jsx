@@ -8,7 +8,7 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
   
   const handleLogin = async (e) => {
     e.preventDefault();
-    setNotification(null); // Limpa a notificação anterior
+    setNotification(null);
 
     try {
       const response = await fetch('/api/login', {
@@ -22,10 +22,8 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
       if (!response.ok) {
         setNotification({ message: data.error || "Erro no login.", type: 'error' });
       } else {
-        // Salva o token no armazenamento local do navegador
         localStorage.setItem('token', data.token);
         setNotification({ message: "Login bem-sucedido!", type: 'success' });
-        // Chama a função passada pelo pai para notificar o sucesso do login
         onLoginSuccess();
       }
     } catch (e) {
@@ -35,6 +33,7 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
 
   return (
     <div className="auth-container">
+      <h1>Gerenciador de Tarefas</h1>
       <h2>Login</h2>
       <AlertMessage notification={notification} />
       <form onSubmit={handleLogin}>

@@ -72,7 +72,7 @@ function authenticateToken(req, res, next) {
   });
 }
 
-app.get("/api/tasks", (req, res) => {
+app.get("/api/tasks", authenticateToken, (req, res) => {
   const sqlTasks = "SELECT * FROM tasks ORDER BY id";
   const sqlSubtasks = "SELECT * FROM subtasks ORDER BY id";
 
@@ -99,7 +99,7 @@ app.get("/api/tasks", (req, res) => {
   });
 });
 
-app.post("/api/tasks/:taskId/subtasks", (req, res) => {
+app.post("/api/tasks/:taskId/subtasks", authenticateToken, (req, res) => {
   const { title, due_date } = req.body;
   const taskId = req.params.taskId;
 
@@ -122,7 +122,7 @@ app.post("/api/tasks/:taskId/subtasks", (req, res) => {
   });
 });
 
-app.put("/api/subtasks/:id", (req, res) => {
+app.put("/api/subtasks/:id", authenticateToken, (req, res) => {
   const { title, due_date, completed } = req.body;
   const id = req.params.id;
 
@@ -157,7 +157,7 @@ app.put("/api/subtasks/:id", (req, res) => {
   });
 });
 
-app.delete("/api/subtasks/:id", (req, res) => {
+app.delete("/api/subtasks/:id", authenticateToken, (req, res) => {
   const id = req.params.id;
   const sql = "DELETE FROM subtasks WHERE id = ?";
   db.run(sql, [id], function (err) {
@@ -167,7 +167,7 @@ app.delete("/api/subtasks/:id", (req, res) => {
   });
 });
 
-app.post("/api/tasks", (req, res) => {
+app.post("/api/tasks", authenticateToken, (req, res) => {
   const { title, priority, due_date } = req.body;
   if (!title) return res.status(400).json({ error: "Título obrigatório" });
 
@@ -192,7 +192,7 @@ app.post("/api/tasks", (req, res) => {
   });
 });
 
-app.put("/api/tasks/:id", (req, res) => {
+app.put("/api/tasks/:id", authenticateToken, (req, res) => {
   const id = req.params.id;
   const { title, priority, due_date, completed } = req.body;
   let updateFields = [], params = [];
@@ -218,7 +218,7 @@ app.put("/api/tasks/:id", (req, res) => {
   });
 });
 
-app.delete("/api/tasks/:id", (req, res) => {
+app.delete("/api/tasks/:id", authenticateToken, (req, res) => {
   const id = req.params.id;
   db.run("DELETE FROM tasks WHERE id=?", [id], function (err) {
     if (err) return res.status(500).json({ error: err.message });

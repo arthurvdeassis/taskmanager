@@ -8,7 +8,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
   
   const handleRegister = async (e) => {
     e.preventDefault();
-    setNotification(null); // Limpa a notificação anterior
+    setNotification(null);
 
     try {
       const response = await fetch('/api/register', {
@@ -25,7 +25,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
         setNotification({ message: "Registro bem-sucedido! Por favor, faça login.", type: 'success' });
         setUsername('');
         setPassword('');
-        setTimeout(() => onSwitchToLogin(), 2000); // Redireciona para login após 2s
+        setTimeout(() => onSwitchToLogin(), 2000);
       }
     } catch (e) {
       setNotification({ message: "Não foi possível conectar ao servidor.", type: 'error' });
