@@ -659,6 +659,69 @@ h1 {
   align-items: center;
 }
 
+.add-subtask-form {
+    display: flex;
+    align-items: flex-end; /* Alinha a base dos campos */
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.form-group-inline {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group-inline:first-child {
+    flex-grow: 1; /* Faz o campo de sub-tarefa ocupar o espaço restante */
+}
+
+.subtask-label {
+    font-size: 0.8em;
+    color: #777;
+    font-weight: 500;
+}
+
+.add-subtask-input,
+.add-subtask-date-input {
+    width: 100%;
+    height: 38px; /* Altura unificada */
+    padding: 8px 12px;
+    border: 1px solid #cdd4da; /* Borda unificada */
+    border-radius: 8px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.add-subtask-date-input {
+    width: 140px; /* Largura para o campo de data */
+    flex-shrink: 0;
+}
+
+.add-subtask-form-btn {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 1px solid #cdd4da; /* Borda unificada */
+    background-color: #f0f0f0;
+    color: #555;
+    cursor: pointer;
+    font-size: 1.1em;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    transform: translateY(0px);
+}
+
+.add-subtask-form-btn:hover {
+    background-color: #e0e0e0;
+    border-color: #ccc;
+    color: #333;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
