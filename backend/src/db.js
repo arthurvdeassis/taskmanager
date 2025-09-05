@@ -35,6 +35,18 @@ db.serialize(() => {
       console.log("Tabelas 'tasks' e 'subtasks' garantidas.");
     }
   });
+
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+  )`, (err) => {
+    if (err) {
+      console.error("Erro ao criar tabela 'users':", err.message);
+    } else {
+      console.log("Tabela 'users' garantida.");
+    }
+  });
 });
 
 module.exports = db;
