@@ -10,7 +10,7 @@ import SubtaskItem from "./SubtaskItem";
 import EditSubtaskModal from './EditSubtaskModal';
 
 const formatDate = (dateString) => {
-  if (!dateString) return null;
+  if (!dateString) return 'Sem vencimento';
   const [year, month, day] = dateString.split("-");
   return `${day}/${month}/${year}`;
 };
