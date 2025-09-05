@@ -42,11 +42,13 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showRegisterForm, setShowRegisterForm] = useState(false);
   
+  // Estados para o formulário principal
   const [title, setTitle] = useState("");
   const [priority, setPriority] = useState("Normal");
   const [dueDate, setDueDate] = useState("");
   const titleInputRef = useRef(null);
 
+  // Estados para o formulário de sub-tarefas condicional
   const [showSubtaskForm, setShowSubtaskForm] = useState(false);
   const [tempSubtasks, setTempSubtasks] = useState([]);
   const [currentSubtaskTitle, setCurrentSubtaskTitle] = useState('');
@@ -88,7 +90,7 @@ export default function App() {
     } catch (e) {
       console.error("Falha ao buscar as tarefas:", e);
       setNotification({ message: "Não foi possível carregar as tarefas.", type: 'error' });
-      setIsLoggedIn(false);
+      setIsLoggedIn(false); // Desconecta se o token for inválido
     }
   };
 
@@ -219,7 +221,8 @@ export default function App() {
     }
 
     setAllTasks([...allTasks, { ...newMainTask, subtasks: createdSubtasks }]);
-
+    
+    // Resetar o formulário
     setTitle("");
     setPriority("Normal");
     setDueDate("");
@@ -285,13 +288,13 @@ export default function App() {
     }
   };
 
-  const handleAddSubtask = async (taskId, subtaskTitle) => {
+  const handleAddSubtask = async (taskId, subtaskTitle, subtaskDueDate) => {
     if (!subtaskTitle.trim()) return;
     
     const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ title: subtaskTitle }),
+      body: JSON.stringify({ title: subtaskTitle, due_date: subtaskDueDate }),
     });
 
     if (res.ok) {
@@ -483,125 +486,132 @@ export default function App() {
               <option value="vencimento">Vencimento</option>
               <option value="prioridade">Prioridade</option>
             </select>
-          </div>
-        </div>
-        <div className="task-list-wrapper">
-          <div className="task-list-header">
-            <span className="header-priority">Prioridade</span>
-            <span className="header-task">Tarefa</span>
-            <span className="header-subtasks">Sub-tarefas</span>
-            <span className="header-date">Vencimento</span>
-            <span className="header-actions">Ações</span>
-          </div>
-          <motion.ul
-            className="task-list"
-            variants={listVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <AnimatePresence>
-              {filteredTasks.map((t) => {
-                const subtasksCompleted = (t.subtasks || []).filter(st => st.completed).length;
-                const totalSubtasks = (t.subtasks || []).length;
-                const InlineSubtaskForm = ({ taskId }) => {
-                    const [title, setTitle] = useState('');
-                    const onFormSubmit = (e) => {
-                        e.preventDefault();
-                        handleAddSubtask(taskId, title);
-                        setTitle('');
-                    };
-                    return (
-                        <form className="add-subtask-form" onSubmit={onFormSubmit}>
-                            <input 
-                                type="text"
-                                className="add-subtask-input"
-                                placeholder="Adicionar sub-tarefa..."
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                            />
-                            <button type="submit" className="action-btn add-subtask-form-btn" title="Adicionar sub-tarefa">
-                                <FaPlus />
-                            </button>
-                        </form>
-                    );
-                };
-
-                return (
-                  <motion.li
-                    key={t.id}
-                    className={`task-item ${t.completed ? "completed" : ""}`}
-                    variants={itemVariants}
-                    layout
-                    exit={{ opacity: 0, x: -50, transition: { duration: 0.3 } }}
-                  >
-                    <div className="task-item-content">
-                      <div className="task-col-priority">
-                        <span className={`priority-tag ${t.priority?.toLowerCase()}`}>{t.priority}</span>
-                      </div>
-                      <div className="task-col-title" title={t.title}>
-                        <span className="task-title">{t.title}</span>
-                      </div>
-                      <div className="task-col-subtasks">
-                        {totalSubtasks > 0 ? (
-                          <>
-                            <div className="subtask-progress">
-                              <BsCheck2Square className="subtask-progress-icon" />
-                              <span>{subtasksCompleted} / {totalSubtasks}</span>
-                          </div>
-                          <button className="expand-btn" onClick={() => setExpandedTaskId(expandedTaskId === t.id ? null : t.id)}>
-                              {expandedTaskId === t.id ? '▲' : '▼'}
-                          </button>
-                          </>
-                        ) : (
-                          <button className="add-subtask-placeholder-btn" onClick={() => setExpandedTaskId(expandedTaskId === t.id ? null : t.id)} title="Adicionar/Ver sub-tarefas">
-                            <FaPlus className="subtask-placeholder-icon" />
-                            <span>Adicionar</span>
-                          </button>
-                        )}
-                      </div>
-                      <div className="task-col-date">
-                        <span className="task-date">{formatDate(t.due_date)}</span>
-                      </div>
-                      <div className="task-col-actions">
-                        <button className="action-btn edit-task-btn" onClick={() => handleOpenEditModal(t)} title="Editar tarefa">✏️</button>
-                        <button className="action-btn toggle-task-btn" onClick={() => toggle(t.id, t.completed)} title={t.completed ? "Desmarcar" : "Marcar como concluída"}>✔</button>
-                        <button className="action-btn delete-task-btn" onClick={() => setTaskToDelete(t)} title="Deletar tarefa">🗑</button>
-                      </div>
-                    </div>
-
-                    <AnimatePresence>
-                      {expandedTaskId === t.id && (
-                        <motion.div 
-                          className="subtasks-container"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.3 }}
-                        >
-                          {(t.subtasks || []).map(subtask => (
-                            <SubtaskItem 
-                              key={subtask.id}
-                              subtask={subtask}
-                              onToggle={(subtaskId, completed) => handleToggleSubtask(subtaskId, completed, t.id)}
-                              onDelete={() => handleDeleteSubtask(subtask.id, t.id)}
-                              onEdit={setEditingSubtask}
-                            />
-                          ))}
-                          <InlineSubtaskForm taskId={t.id} />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                </motion.li>
-                );
-              })}
-            </AnimatePresence>
-          </motion.ul>
         </div>
       </div>
-      
-      {isEditModalOpen && <EditTaskModal task={editingTask} onSave={handleUpdateTask} onClose={handleCloseEditModal} />}
-      {taskToDelete && <ConfirmModal message={`Tem certeza que deseja excluir a tarefa "${taskToDelete.title}"?`} onConfirm={handleConfirmDelete} onCancel={() => setTaskToDelete(null)} />}
-      {editingSubtask && <EditSubtaskModal subtask={editingSubtask} onSave={handleUpdateSubtask} onClose={() => setEditingSubtask(null)} />}
+      <div className="task-list-wrapper">
+        <div className="task-list-header">
+          <span className="header-priority">Prioridade</span>
+          <span className="header-task">Tarefa</span>
+          <span className="header-subtasks">Sub-tarefas</span>
+          <span className="header-date">Vencimento</span>
+          <span className="header-actions">Ações</span>
+        </div>
+        <motion.ul
+          className="task-list"
+          variants={listVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <AnimatePresence>
+            {filteredTasks.map((t) => {
+              const subtasksCompleted = (t.subtasks || []).filter(st => st.completed).length;
+              const totalSubtasks = (t.subtasks || []).length;
+              const InlineSubtaskForm = ({ taskId }) => {
+                  const [title, setTitle] = useState('');
+                  const [dueDate, setDueDate] = useState('');
+                  const onFormSubmit = (e) => {
+                      e.preventDefault();
+                      handleAddSubtask(taskId, title, dueDate);
+                      setTitle('');
+                      setDueDate('');
+                  };
+                  return (
+                      <form className="add-subtask-form" onSubmit={onFormSubmit}>
+                        <input 
+                          type="text"
+                          className="add-subtask-input"
+                          placeholder="Adicionar sub-tarefa..."
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                        />
+                        <input
+                          type="date"
+                          className="add-subtask-date-input"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                        />
+                        <button type="submit" className="action-btn add-subtask-form-btn" title="Adicionar sub-tarefa">
+                          <FaPlus />
+                        </button>
+                    </form>
+                  );
+              };
+
+              return (
+                <motion.li
+                  key={t.id}
+                  className={`task-item ${t.completed ? "completed" : ""}`}
+                  variants={itemVariants}
+                  layout
+                  exit={{ opacity: 0, x: -50, transition: { duration: 0.3 } }}
+                >
+                  <div className="task-item-content">
+                    <div className="task-col-priority">
+                      <span className={`priority-tag ${t.priority?.toLowerCase()}`}>{t.priority}</span>
+                    </div>
+                    <div className="task-col-title" title={t.title}>
+                      <span className="task-title">{t.title}</span>
+                    </div>
+                    <div className="task-col-subtasks">
+                      {totalSubtasks > 0 ? (
+                        <>
+                          <div className="subtask-progress">
+                            <BsCheck2Square className="subtask-progress-icon" />
+                            <span>{subtasksCompleted} / {totalSubtasks}</span>
+                          </div>
+                          <button className="expand-btn" onClick={() => setExpandedTaskId(expandedTaskId === t.id ? null : t.id)}>
+                            {expandedTaskId === t.id ? '▲' : '▼'}
+                          </button>
+                        </>
+                      ) : (
+                        <button className="add-subtask-placeholder-btn" onClick={() => setExpandedTaskId(expandedTaskId === t.id ? null : t.id)} title="Adicionar/Ver sub-tarefas">
+                          <FaPlus className="subtask-placeholder-icon" />
+                          <span>Adicionar</span>
+                        </button>
+                      )}
+                  </div>
+                  <div className="task-col-date">
+                    <span className="task-date">{formatDate(t.due_date)}</span>
+                  </div>
+                  <div className="task-col-actions">
+                    <button className="action-btn edit-task-btn" onClick={() => handleOpenEditModal(t)} title="Editar tarefa">✏️</button>
+                    <button className="action-btn toggle-task-btn" onClick={() => toggle(t.id, t.completed)} title={t.completed ? "Desmarcar" : "Marcar como concluída"}>✔</button>
+                    <button className="action-btn delete-task-btn" onClick={() => setTaskToDelete(t)} title="Deletar tarefa">🗑</button>
+                </div>
+              </div>
+              <AnimatePresence>
+                {expandedTaskId === t.id && (
+                  <motion.div 
+                    className="subtasks-container"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    {(t.subtasks || []).map(subtask => (
+                      <SubtaskItem 
+                        key={subtask.id}
+                        subtask={subtask}
+                        onToggle={(subtaskId, completed) => handleToggleSubtask(subtaskId, completed, t.id)}
+                        onDelete={() => handleDeleteSubtask(subtask.id, t.id)}
+                        onEdit={setEditingSubtask}
+                      />
+                    ))}
+                    <InlineSubtaskForm taskId={t.id} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.li>
+            );
+          })}
+        </AnimatePresence>
+        </motion.ul>
+      </div>
     </div>
+    
+    {isEditModalOpen && <EditTaskModal task={editingTask} onSave={handleUpdateTask} onClose={handleCloseEditModal} />}
+    {taskToDelete && <ConfirmModal message={`Tem certeza que deseja excluir a tarefa "${taskToDelete.title}"?`} onConfirm={handleConfirmDelete} onCancel={() => setTaskToDelete(null)} />}
+    {editingSubtask && <EditSubtaskModal subtask={editingSubtask} onSave={handleUpdateSubtask} onClose={() => setEditingSubtask(null)} />}
+  </div>
   );
 }
