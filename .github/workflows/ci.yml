@@ -8,12 +8,16 @@ on:
 
 jobs:
   construir-e-testar:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     
     defaults:
       run:
         working-directory: ./backend
 
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
     steps:
     - name: Fazer checkout do repositório
       uses: actions/checkout@v4
@@ -28,14 +32,17 @@ jobs:
     - name: Instalar dependências
       run: npm install
 
-    - name: Garantir permissão de execução para o Jest
-      run: chmod +x ./node_modules/.bin/jest
-
     - name: Reconstruir sqlite3 para o ambiente de CI
+      # O rebuild para o Windows pode precisar de ajustes, como o uso de "--build-from-source"
       run: npm rebuild sqlite3 --update-binary
 
     - name: Criar diretório do banco de dados
-      run: mkdir -p db
+      run: |
+        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+          mkdir -p db
+        else
+          mkdir -p db
+        fi
 
     - name: Rodar testes e gerar relatório de cobertura
       run: npm test
