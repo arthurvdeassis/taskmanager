@@ -31,6 +31,9 @@ jobs:
     - name: Garantir permissão de execução para o Jest
       run: chmod +x ./node_modules/.bin/jest
 
+    - name: Rebuild sqlite3 for CI environment
+      run: npm rebuild sqlite3 --update-binary
+
     - name: Run tests and generate coverage report
       run: npm test
 
