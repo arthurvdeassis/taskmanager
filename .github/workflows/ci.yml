@@ -17,7 +17,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-    
+
     steps:
     - name: Fazer checkout do repositório
       uses: actions/checkout@v4
@@ -32,17 +32,16 @@ jobs:
     - name: Instalar dependências
       run: npm install
 
-    - name: Reconstruir sqlite3 para o ambiente de CI
-      # O rebuild para o Windows pode precisar de ajustes, como o uso de "--build-from-source"
-      run: npm rebuild sqlite3 --update-binary
+    - name: Ajustar permissões e reconstruir dependências
+      shell: bash
+      run: |
+        if [[ "${{ matrix.os }}" == "ubuntu-latest" || "${{ matrix.os }}" == "macos-latest" ]]; then
+          chmod +x ./node_modules/.bin/jest
+          npm rebuild sqlite3 --update-binary
+        fi
 
     - name: Criar diretório do banco de dados
-      run: |
-        if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          mkdir -p db
-        else
-          mkdir -p db
-        fi
+      run: mkdir -p db
 
     - name: Rodar testes e gerar relatório de cobertura
       run: npm test
@@ -51,4 +50,3 @@ jobs:
       uses: codecov/codecov-action@v4
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-        # working-directory: ./backend
