@@ -1,35 +1,38 @@
-name: CI do Backend
+name: Backend CI & Test Coverage
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
-  test_and_coverage:
+  build-and-test:
     runs-on: ubuntu-latest
     
+    defaults:
+      run:
+        working-directory: ./backend
+
     steps:
-      - name: Checkout do código
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Configurar Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '18'
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
 
-      - name: Instalar dependências
-        run: npm install
+    - name: Install dependencies
+      run: npm install
 
-      - name: Rodar testes e coletar cobertura
-        run: npm run test:cov
+    - name: Run tests and generate coverage report
+      run: npm test
 
-      - name: Enviar relatório de cobertura para o Codecov
-        uses: codecov/codecov-action@v2
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
-          fail_ci_if_error: true
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        working-directory: ./backend

@@ -66,10 +66,17 @@ Um sistema completo para gerenciar suas tarefas diárias, com funcionalidades de
     ```
     O backend será iniciado na porta `3000`.
 
-4. **Para o Frontend:**
-    Assumindo que o frontend está em uma pasta separada, siga as instruções de instalação e inicialização da pasta `frontend`.
+4. **Instale as dependências do frontend:**
+    ```bash
+    cd frotend
+    npm install
+    ```
 
----
+5. **Inicie o frontend:**
+    ```bash
+    npm run dev
+    ```
+    O frontend será iniciado na porta `5000`.
 
 ## 🧪 Testes e Cobertura de Código
 
