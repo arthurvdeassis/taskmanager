@@ -1,18 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 
 export default function EditSubtaskModal({ subtask, onSave, onClose }) {
-  const [title, setTitle] = useState(subtask.title);
-  const [dueDate, setDueDate] = useState(subtask.due_date || '');
+  const [title, setTitle] = useState('');
+  const [dueDate, setDueDate] = useState('');
 
   const today = new Date().toISOString().split('T')[0];
 
-  const handleSave = (e) => {
+  useEffect(() => {
+    if (subtask) {
+      setTitle(subtask.title);
+      
+      if (subtask.due_date && subtask.due_date !== 'Sem vencimento') {
+        try {
+          const formattedDate = format(new Date(subtask.due_date), 'yyyy-MM-dd');
+          setDueDate(formattedDate);
+        } catch (e) {
+          console.error("Data inválida recebida da API:", subtask.due_date);
+          setDueDate('');
+        }
+      } else {
+        setDueDate('');
+      }
+    }
+  }, [subtask]);
+
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
       alert('O título é obrigatório.');
       return;
     }
-    onSave(subtask.id, { title, due_date: dueDate });
+
+    const token = localStorage.getItem('token');
+    const updatedSubtaskData = { 
+      title: title.trim(), 
+      due_date: dueDate 
+    };
+
+    try {
+      const res = await fetch(`/api/tasks/subtasks/${subtask.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedSubtaskData),
+      });
+
+      if (!res.ok) {
+        throw new Error('Falha ao atualizar a sub-tarefa');
+      }
+
+      onSave();
+      onClose();
+
+    } catch (error) {
+      console.error("Erro ao salvar a sub-tarefa:", error);
+      alert("Ocorreu um erro ao salvar as alterações.");
+    }
   };
 
   return (

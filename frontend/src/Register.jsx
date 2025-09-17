@@ -11,7 +11,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
     setNotification(null);
 
     try {
-      const response = await fetch('/api/register', {
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -22,10 +22,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
       if (!response.ok) {
         setNotification({ message: data.error || "Erro no registro.", type: 'error' });
       } else {
-        setNotification({ message: "Registro bem-sucedido! Por favor, faça login.", type: 'success' });
-        setUsername('');
-        setPassword('');
-        setTimeout(() => onSwitchToLogin(), 2000);
+        onRegisterSuccess();
       }
     } catch (e) {
       setNotification({ message: "Não foi possível conectar ao servidor.", type: 'error' });
@@ -34,6 +31,7 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
 
   return (
     <div className="auth-container">
+      <h1>Gerenciador de Tarefas</h1>
       <h2>Criar conta</h2>
       <AlertMessage notification={notification} />
       <form onSubmit={handleRegister}>

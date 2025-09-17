@@ -11,7 +11,7 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
     setNotification(null);
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -23,7 +23,6 @@ export default function Login({ onLoginSuccess, onSwitchToRegister }) {
         setNotification({ message: data.error || "Erro no login.", type: 'error' });
       } else {
         localStorage.setItem('token', data.token);
-        setNotification({ message: "Login bem-sucedido!", type: 'success' });
         onLoginSuccess();
       }
     } catch (e) {

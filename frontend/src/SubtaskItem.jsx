@@ -3,15 +3,46 @@ import { motion } from 'framer-motion';
 import { FaEdit } from 'react-icons/fa';
 
 const formatDate = (dateString) => {
-  if (!dateString || dateString === 'Sem vencimento') {
+  if (!dateString || dateString === 'Sem vencimento') {
     return 'Sem vencimento';
   }
-  const [year, month, day] = dateString.split("-");
-  return `${day}/${month}/${year}`;
+  if (!dateString.includes('-')) {
+    return dateString;
+  }
+  const [year, month, day] = dateString.split("T")[0].split("-");
+  return `${day}/${month}/${year}`;
 };
 
+export default function SubtaskItem({ subtask, onUpdate, onEdit, onDelete }) {
 
-export default function SubtaskItem({ subtask, onToggle, onDelete, onEdit }) {
+  const handleToggleCompletion = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/tasks/subtasks/${subtask.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ completed: !subtask.completed }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Falha ao atualizar o status da sub-tarefa');
+      }
+
+      onUpdate();
+
+    } catch (error) {
+      console.error("Erro:", error);
+      alert("Não foi possível atualizar a sub-tarefa.");
+    }
+  };
+
+  const handleDeleteClick = () => {
+    onDelete(subtask);
+  };
+
   return (
     <motion.div
       className={`subtask-item ${subtask.completed ? 'completed' : ''}`}
@@ -23,7 +54,7 @@ export default function SubtaskItem({ subtask, onToggle, onDelete, onEdit }) {
     >
       <button 
         className="subtask-toggle-btn"
-        onClick={() => onToggle(subtask.id, !subtask.completed)}
+        onClick={handleToggleCompletion}
       >
         <div className="checkbox-icon">
           {subtask.completed && '✔'}
@@ -36,7 +67,7 @@ export default function SubtaskItem({ subtask, onToggle, onDelete, onEdit }) {
       <button className="subtask-edit-btn" onClick={() => onEdit(subtask)}><FaEdit /></button>
       <button 
         className="subtask-delete-btn"
-        onClick={() => onDelete(subtask.id)}
+        onClick={handleDeleteClick}
         title="Excluir sub-tarefa"
       >
         🗑️

@@ -23,14 +23,60 @@ export default function AddTaskModal({ onSave, onClose }) {
     setSubtasks(subtasks.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
       alert('O título da tarefa principal é obrigatório.');
       return;
     }
-    const taskData = { title, priority, due_date: dueDate, subtasks };
-    onSave(taskData);
+
+    const token = localStorage.getItem('token');
+    
+    const mainTaskData = { 
+      title: title.trim(), 
+      priority, 
+      due_date: dueDate 
+    };
+
+    try {
+      const taskRes = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(mainTaskData),
+      });
+
+      if (!taskRes.ok) {
+        throw new Error('Falha ao criar a tarefa principal.');
+      }
+
+      const createdTask = await taskRes.json();
+      const newTaskId = createdTask.id;
+
+      if (subtasks.length > 0) {
+        await Promise.all(
+          subtasks.map(subtask => {
+            return fetch(`/api/tasks/${newTaskId}/subtasks`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+              body: JSON.stringify({ title: subtask.title }),
+            });
+          })
+        );
+      }
+
+      onSave(); 
+      onClose();
+
+    } catch (error) {
+      console.error("Erro ao salvar a tarefa e suas subtarefas:", error);
+      alert("Ocorreu um erro ao salvar. Por favor, tente novamente.");
+    }
   };
 
   return (

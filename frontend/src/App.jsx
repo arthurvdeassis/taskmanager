@@ -12,49 +12,52 @@ import Login from "./Login";
 import Register from "./Register";
 
 const formatDate = (dateString) => {
-  if (!dateString || dateString === 'Sem vencimento') {
+  if (!dateString || dateString === 'Sem vencimento') {
     return 'Sem vencimento';
   }
-  const [year, month, day] = dateString.split("-");
-  return `${day}/${month}/${year}`;
+  if (!dateString.includes('-')) return dateString;
+  const [year, month, day] = dateString.split("T")[0].split("-");
+  return `${day}/${month}/${year}`;
 };
 
 const listVariants = {
-  visible: { opacity: 1, transition: { when: "beforeChildren", staggerChildren: 0.1 } },
-  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { when: "beforeChildren", staggerChildren: 0.1 } },
+  hidden: { opacity: 0 },
 };
 
 const itemVariants = {
-  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } },
-  hidden: { y: 20, opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: "spring", stiffness: 100 } },
+  hidden: { y: 20, opacity: 0 },
 };
 
 export default function App() {
-  const [allTasks, setAllTasks] = useState([]);
-  const [activeFilter, setActiveFilter] = useState("pendentes");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
-  const [sortBy, setSortBy] = useState('vencimento');
-  const [notification, setNotification] = useState(null);
-  const [taskToDelete, setTaskToDelete] = useState(null);
-  const [expandedTaskId, setExpandedTaskId] = useState(null);
-  const [editingSubtask, setEditingSubtask] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [showRegisterForm, setShowRegisterForm] = useState(false);
-  
-  // Estados para o formulário principal
-  const [title, setTitle] = useState("");
-  const [priority, setPriority] = useState("Normal");
-  const [dueDate, setDueDate] = useState("");
-  const titleInputRef = useRef(null);
+  const [allTasks, setAllTasks] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("pendentes");
+  const [editingTask, setEditingTask] = useState(null);
+  const [sortBy, setSortBy] = useState('vencimento');
+  const [notification, setNotification] = useState(null);
+  const [taskToDelete, setTaskToDelete] = useState(null);
+  const [expandedTaskId, setExpandedTaskId] = useState(null);
+  const [editingSubtask, setEditingSubtask] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showRegisterForm, setShowRegisterForm] = useState(false);
+  
+  const [title, setTitle] = useState("");
+  const [priority, setPriority] = useState("Normal");
+  const [dueDate, setDueDate] = useState("");
+  const titleInputRef = useRef(null);
 
-  // Estados para o formulário de sub-tarefas condicional
-  const [showSubtaskForm, setShowSubtaskForm] = useState(false);
-  const [tempSubtasks, setTempSubtasks] = useState([]);
-  const [currentSubtaskTitle, setCurrentSubtaskTitle] = useState('');
-  const [currentSubtaskDueDate, setCurrentSubtaskDueDate] = useState('');
-  
-  const today = new Date().toISOString().split('T')[0];
+  const [showSubtaskForm, setShowSubtaskForm] = useState(false);
+  const [tempSubtasks, setTempSubtasks] = useState([]);
+  const [currentSubtaskTitle, setCurrentSubtaskTitle] = useState('');
+  const [currentSubtaskDueDate, setCurrentSubtaskDueDate] = useState('');
+  const [subtaskToDelete, setSubtaskToDelete] = useState(null);
+  
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const today = `${year}-${month}-${day}`;
 
   const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -64,38 +67,45 @@ export default function App() {
     };
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsLoggedIn(true);
-      fetchTasks();
-    }
-  }, []);
-
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
-
   const fetchTasks = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        setIsLoggedIn(false);
+        return;
+    }
     try {
-      const response = await fetch("/api/tasks", {
-        headers: getAuthHeaders()
-      });
+      const response = await fetch("/api/tasks", { headers: getAuthHeaders() });
+      if (response.status === 401 || response.status === 403) {
+          handleLogout();
+          throw new Error('Token inválido ou expirado.');
+      }
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       setAllTasks(data);
+      setIsLoggedIn(true);
     } catch (e) {
       console.error("Falha ao buscar as tarefas:", e);
-      setNotification({ message: "Não foi possível carregar as tarefas.", type: 'error' });
-      setIsLoggedIn(false); // Desconecta se o token for inválido
+      if (isLoggedIn) {
+        setNotification({ message: "Sua sessão expirou. Por favor, faça login novamente.", type: 'error' });
+      }
+      handleLogout();
     }
   };
 
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
+
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
+    setShowRegisterForm(false);
     fetchTasks();
   };
   
@@ -161,10 +171,9 @@ export default function App() {
         return (priorityValues[a.priority] || 3) - (priorityValues[b.priority] || 3);
       }
       if (sortBy === 'vencimento') {
-        // Trata 'Sem vencimento' como a última opção na ordenação
         if (a.due_date === 'Sem vencimento' && b.due_date === 'Sem vencimento') return 0;
-        if (a.due_date === 'Sem vencimento') return 1;
-        if (b.due_date === 'Sem vencimento') return -1;
+        if (a.due_date === 'Sem vencimento' || !a.due_date) return 1;
+        if (b.due_date === 'Sem vencimento' || !b.due_date) return -1;
         return new Date(a.due_date) - new Date(b.due_date);
       }
       return 0;
@@ -185,6 +194,35 @@ export default function App() {
     setTempSubtasks(tempSubtasks.filter((_, index) => index !== indexToRemove));
   };
 
+  const handleOpenDeleteSubtaskModal = (subtask) => {
+    setSubtaskToDelete(subtask);
+  };
+
+  const handleConfirmDeleteSubtask = async () => {
+    if (!subtaskToDelete) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`/api/tasks/subtasks/${subtaskToDelete.id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        throw new Error('Falha ao deletar a sub-tarefa');
+      }
+      
+      setNotification({ message: `Sub-tarefa "${subtaskToDelete.title}" excluída.`, type: 'success' });
+      fetchTasks(); 
+
+    } catch (error) {
+      console.error("Erro:", error);
+      setNotification({ message: "Não foi possível deletar a sub-tarefa.", type: 'error' });
+    } finally {
+      setSubtaskToDelete(null); 
+    }
+  };
+
   const addTask = async (e) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -192,168 +230,94 @@ export default function App() {
       return;
     }
 
-    const mainTaskRes = await fetch("/api/tasks", {
-      method: "POST",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ title, priority, due_date: dueDate }),
-    });
-
-    if (!mainTaskRes.ok) {
-      const errorData = await mainTaskRes.json();
-      setNotification({ message: errorData.error || "Ocorreu um erro.", type: 'error' });
-      return;
-    }
-
-    const newMainTask = await mainTaskRes.json();
-    let createdSubtasks = [];
-
-    if (tempSubtasks.length > 0) {
-        for (const sub of tempSubtasks) {
-            const subTaskRes = await fetch(`/api/tasks/${newMainTask.id}/subtasks`, {
-                method: "POST",
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ title: sub.title, due_date: sub.due_date }),
-            });
-            if (subTaskRes.ok) {
-                createdSubtasks.push(await subTaskRes.json());
-            }
-        }
-    }
-
-    setAllTasks([...allTasks, { ...newMainTask, subtasks: createdSubtasks }]);
+    try {
+        const mainTaskRes = await fetch("/api/tasks", {
+            method: "POST",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ title, priority, due_date: dueDate }),
+        });
     
-    // Resetar o formulário
-    setTitle("");
-    setPriority("Normal");
-    setDueDate("");
-    setTempSubtasks([]);
-    setCurrentSubtaskTitle('');
-    setCurrentSubtaskDueDate('');
-    setShowSubtaskForm(false);
-    setNotification({ message: "Tarefa adicionada com sucesso!", type: 'success' });
-    if (titleInputRef.current) {
-      titleInputRef.current.focus();
+        if (!mainTaskRes.ok) {
+            const errorData = await mainTaskRes.json();
+            throw new Error(errorData.error || "Ocorreu um erro.");
+        }
+    
+        const newMainTask = await mainTaskRes.json();
+    
+        if (tempSubtasks.length > 0) {
+            await Promise.all(tempSubtasks.map(sub => 
+                fetch(`/api/tasks/${newMainTask.id}/subtasks`, {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ title: sub.title, due_date: sub.due_date }),
+                })
+            ));
+        }
+    
+        fetchTasks();
+        
+        setTitle("");
+        setPriority("Normal");
+        setDueDate("");
+        setTempSubtasks([]);
+        setCurrentSubtaskTitle('');
+        setCurrentSubtaskDueDate('');
+        setShowSubtaskForm(false);
+        setNotification({ message: "Tarefa adicionada com sucesso!", type: 'success' });
+        if (titleInputRef.current) {
+            titleInputRef.current.focus();
+        }
+    } catch(error) {
+        setNotification({ message: error.message, type: 'error' });
     }
   };
 
   const handleConfirmDelete = async () => {
     if (!taskToDelete) return;
-    await fetch(`/api/tasks/${taskToDelete.id}`, { 
-      method: "DELETE",
-      headers: getAuthHeaders()
-    });
-    setAllTasks(allTasks.filter((t) => t.id !== taskToDelete.id));
-    setNotification({ message: `Tarefa "${taskToDelete.title}" excluída.`, type: 'success' });
-    setTaskToDelete(null);
+    try {
+        const res = await fetch(`/api/tasks/${taskToDelete.id}`, { 
+            method: "DELETE",
+            headers: getAuthHeaders()
+        });
+        if (!res.ok) throw new Error("Falha ao deletar a tarefa.");
+        
+        setNotification({ message: `Tarefa "${taskToDelete.title}" excluída.`, type: 'success' });
+        fetchTasks();
+    } catch(error) {
+        setNotification({ message: error.message, type: 'error' });
+    } finally {
+        setTaskToDelete(null);
+    }
   };
 
-  const toggle = async (id, completed) => {
-    await fetch(`/api/tasks/${id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ completed: !completed }),
-    });
-    setAllTasks(
-      allTasks.map((t) => (t.id === id ? { ...t, completed: !completed } : t))
-    );
+  const toggleTaskCompletion = async (id, completed) => {
+    try {
+        const res = await fetch(`/api/tasks/${id}`, {
+            method: "PUT",
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ completed: !completed }),
+        });
+        if (!res.ok) throw new Error("Falha ao atualizar o status da tarefa.");
+
+        fetchTasks();
+    } catch(error) {
+        setNotification({ message: error.message, type: 'error' });
+    }
   };
   
-  const handleOpenEditModal = (task) => {
-    setEditingTask(task);
-    setIsEditModalOpen(true);
-  };
-
-  const handleCloseEditModal = () => {
-    setIsEditModalOpen(false);
-    setEditingTask(null);
-  };
-
-  const handleUpdateTask = async (id, updatedData) => {
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: "PUT",
-      headers: getAuthHeaders(),
-      body: JSON.stringify(updatedData),
-    });
-
-    if (res.ok) {
-      setAllTasks(
-        allTasks.map((task) =>
-          task.id === id ? { ...task, subtasks: task.subtasks, ...updatedData } : task
-        )
-      );
-      handleCloseEditModal();
-      setNotification({ message: "Tarefa atualizada com sucesso!", type: 'success' });
-    } else {
-      setNotification({ message: "Falha ao atualizar a tarefa.", type: 'error' });
-    }
-  };
-
   const handleAddSubtask = async (taskId, subtaskTitle, subtaskDueDate) => {
     if (!subtaskTitle.trim()) return;
-    
-    const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ title: subtaskTitle, due_date: subtaskDueDate }),
-    });
+    try {
+        const res = await fetch(`/api/tasks/${taskId}/subtasks`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ title: subtaskTitle, due_date: subtaskDueDate }),
+        });
+        if (!res.ok) throw new Error("Falha ao adicionar sub-tarefa.");
 
-    if (res.ok) {
-      const newSubtask = await res.json();
-      setAllTasks(allTasks.map(task => 
-        task.id === taskId 
-          ? { ...task, subtasks: [...(task.subtasks || []), newSubtask] }
-          : task
-      ));
-    } else {
-      setNotification({ message: "Falha ao adicionar sub-tarefa.", type: 'error' });
-    }
-  };
-
-  const handleToggleSubtask = async (subtaskId, completed, taskId) => {
-    await fetch(`/api/subtasks/${subtaskId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ completed }),
-    });
-
-    setAllTasks(allTasks.map(task => 
-      task.id === taskId
-        ? { ...task, subtasks: task.subtasks.map(st => st.id === subtaskId ? {...st, completed} : st) }
-        : task
-    ));
-  };
-
-  const handleDeleteSubtask = async (subtaskId, taskId) => {
-    await fetch(`/api/subtasks/${subtaskId}`, { 
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-
-    setAllTasks(allTasks.map(task => 
-      task.id === taskId 
-        ? { ...task, subtasks: (task.subtasks || []).filter(st => st.id !== subtaskId) }
-        : task
-    ));
-  };
-
-  const handleUpdateSubtask = async (subtaskId, data) => {
-    const taskId = editingSubtask.task_id;
-    const res = await fetch(`/api/subtasks/${subtaskId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-
-    if(res.ok){
-      setAllTasks(allTasks.map(task => 
-        task.id === taskId
-          ? { ...task, subtasks: task.subtasks.map(st => st.id === subtaskId ? {...st, ...data} : st) }
-          : task
-      ));
-      setEditingSubtask(null);
-      setNotification({ message: "Sub-tarefa atualizada.", type: 'success' });
-    } else {
-      setNotification({ message: "Falha ao atualizar sub-tarefa.", type: 'error' });
+        fetchTasks();
+    } catch(error) {
+        setNotification({ message: error.message, type: 'error' });
     }
   };
 
@@ -362,7 +326,10 @@ export default function App() {
       <div className="auth-page-container">
         <div className="auth-forms-container">
           {showRegisterForm ? (
-            <Register onRegisterSuccess={() => setShowRegisterForm(false)} onSwitchToLogin={() => setShowRegisterForm(false)} />
+            <Register onRegisterSuccess={() => {
+                setNotification({ message: "Registro bem-sucedido! Por favor, faça login.", type: 'success' });
+                setShowRegisterForm(false);
+            }} onSwitchToLogin={() => setShowRegisterForm(false)} />
           ) : (
             <Login onLoginSuccess={handleLoginSuccess} onSwitchToRegister={() => setShowRegisterForm(true)} />
           )}
@@ -527,6 +494,7 @@ export default function App() {
                                 className="add-subtask-date-input"
                                 value={dueDate}
                                 onChange={(e) => setDueDate(e.target.value)}
+                                min={today}
                             />
                             <button type="submit" className="action-btn add-subtask-form-btn" title="Adicionar sub-tarefa">
                                 <FaPlus />
@@ -572,8 +540,8 @@ export default function App() {
                         <span className="task-date">{formatDate(t.due_date)}</span>
                       </div>
                       <div className="task-col-actions">
-                        <button className="action-btn edit-task-btn" onClick={() => handleOpenEditModal(t)} title="Editar tarefa">✏️</button>
-                        <button className="action-btn toggle-task-btn" onClick={() => toggle(t.id, t.completed)} title={t.completed ? "Desmarcar" : "Marcar como concluída"}>✔</button>
+                        <button className="action-btn edit-task-btn" onClick={() => setEditingTask(t)} title="Editar tarefa">✏️</button>
+                        <button className="action-btn toggle-task-btn" onClick={() => toggleTaskCompletion(t.id, t.completed)} title={t.completed ? "Desmarcar" : "Marcar como concluída"}>✔</button>
                         <button className="action-btn delete-task-btn" onClick={() => setTaskToDelete(t)} title="Deletar tarefa">🗑</button>
                       </div>
                     </div>
@@ -591,9 +559,9 @@ export default function App() {
                             <SubtaskItem 
                               key={subtask.id}
                               subtask={subtask}
-                              onToggle={(subtaskId, completed) => handleToggleSubtask(subtaskId, completed, t.id)}
-                              onDelete={() => handleDeleteSubtask(subtask.id, t.id)}
+                              onUpdate={fetchTasks}
                               onEdit={setEditingSubtask}
+                              onDelete={handleOpenDeleteSubtaskModal}
                             />
                           ))}
                           <InlineSubtaskForm taskId={t.id} />
@@ -608,9 +576,10 @@ export default function App() {
         </div>
       </div>
       
-      {isEditModalOpen && <EditTaskModal task={editingTask} onSave={handleUpdateTask} onClose={handleCloseEditModal} />}
+      {editingTask && <EditTaskModal task={editingTask} onSave={fetchTasks} onClose={() => setEditingTask(null)} />}
       {taskToDelete && <ConfirmModal message={`Tem certeza que deseja excluir a tarefa "${taskToDelete.title}"?`} onConfirm={handleConfirmDelete} onCancel={() => setTaskToDelete(null)} />}
-      {editingSubtask && <EditSubtaskModal subtask={editingSubtask} onSave={handleUpdateSubtask} onClose={() => setEditingSubtask(null)} />}
+      {editingSubtask && <EditSubtaskModal subtask={editingSubtask} onSave={fetchTasks} onClose={() => setEditingSubtask(null)} />}
+      {subtaskToDelete && <ConfirmModal message={`Tem certeza que deseja excluir a sub-tarefa "${subtaskToDelete.title}"?`} onConfirm={handleConfirmDeleteSubtask} onCancel={() => setSubtaskToDelete(null)} />}
     </div>
   );
 }
