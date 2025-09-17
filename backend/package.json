@@ -3,10 +3,11 @@
   "version": "1.0.0",
   "main": "src/index.js",
   "scripts": {
-    "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "test": "jest --runInBand",
-    "test:cov": "jest --coverage --runInBand"
+    "dev": "nodemon src/index.js",
+    "test": "npx jest --runInBand --coverage",
+    "test:watch": "npx jest --watch --coverage",
+    "test:cov": "npx jest --coverage --runInBand"
   },
   "dependencies": {
     "express": "^4.18.2",
