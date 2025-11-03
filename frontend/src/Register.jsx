@@ -19,11 +19,14 @@ export default function Register({ onRegisterSuccess, onSwitchToLogin }) {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        setNotification({ message: data.error || "Erro no registro.", type: 'error' });
-      } else {
+    if (!response.ok) {
+      setNotification({ message: data.error || "Erro no registro.", type: 'error' });
+    } else {
+      setNotification({ message: "Registro bem-sucedido! Por favor, faça login.", type: 'success' });
+      setTimeout(() => {
         onRegisterSuccess();
-      }
+      }, 1500); // Mostra a mensagem por 1,5 seg.
+    }
     } catch (e) {
       setNotification({ message: "Não foi possível conectar ao servidor.", type: 'error' });
     }
