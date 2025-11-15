@@ -103,7 +103,7 @@ O projeto também inclui testes **End-to-End (E2E)** usando o Cypress, garantind
     cd frontend
     npm install --save-dev cypress
     
-#### 3. Execute:
+#### 2. Execute:
 ##### **Modo Interativo:**
 
     npx cypress open
@@ -116,12 +116,12 @@ A interface do Cypress abrirá. Selecione um navegador e escolha o arquivo de te
 
 Os testes serão executados no terminal, útil para pipelines de CI ou execuções rápidas.
 
-#### 4. Estrutura dos testes
+#### 3. Estrutura dos testes:
 
 - Os testes ficam na pasta `frontend/cypress/e2e`.
 - Cada arquivo cobre um fluxo completo (exemplo: login, cadastro, tarefas).
 
-#### 5. Observação importante
+#### 4. Observação importante:
 - Garanta que o backend esteja rodando na porta 3000 e o frontend na 5173 antes de rodar o Cypress.  
   
 ## ⚙️ CI/CD com GitHub Actions
