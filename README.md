@@ -78,7 +78,7 @@ Um sistema completo para gerenciar suas tarefas diárias, com funcionalidades de
     ```
     O frontend será iniciado na porta `5000`.
 
-## 🧪 Testes e Cobertura de Código
+## 🧪 Testes Unitários/Integração e Cobertura de Código
 
 O projeto utiliza **Jest** para testes de unidade e integração. Para rodar os testes localmente, siga os comandos abaixo:
 
@@ -94,9 +94,45 @@ O projeto utiliza **Jest** para testes de unidade e integração. Para rodar os 
     npm run test:cov
     ```
     Este comando rodará os testes e gerará um relatório detalhado de cobertura, mostrando a porcentagem de código que está sendo testada.
-
 ---
 
+## 🧪 Testes End-to-End
+
+O projeto também inclui testes **End-to-End (E2E)** usando o Cypress, garantindo que os principais fluxos funcionem do ponto de vista do usuário final.
+
+### **Rodando os Testes E2E**
+
+#### 1. Pré-requisitos
+
+- Clone o projeto e instale as dependências normalmente (backend e frontend já instalados).
+- Tenha o backend rodando (`npm run dev` na pasta `backend`).
+- Tenha o frontend rodando (`npm run dev` na pasta `frontend`).
+
+#### 2. Instale o Cypress (se ainda não estiver instalado)
+    ```bash
+    cd frontend
+    npm install --save-dev cypress
+    ```
+#### 3. Execute o Cypress
+##### **Modo Interativo:**
+    ```bash
+    npx cypress open
+    ```
+A interface do Cypress abrirá. Selecione um navegador e escolha o arquivo de teste desejado para acompanhar os testes passo a passo.
+
+##### **Modo Headless:**
+    ```bash
+    npx cypress run
+    ```
+Os testes serão executados no terminal, útil para pipelines de CI ou execuções rápidas.
+#### 4. Estrutura dos testes
+
+- Os testes ficam na pasta `frontend/cypress/e2e`.
+- Cada arquivo cobre um fluxo completo (exemplo: login, cadastro, tarefas).
+
+#### 5. Observação importante
+- Garanta que o backend esteja rodando na porta 3000 e o frontend na 5173 antes de rodar o Cypress.  
+  
 ## ⚙️ CI/CD com GitHub Actions
 
 Este projeto está configurado para usar o GitHub Actions para automatizar o processo de testes e cobertura de código.
