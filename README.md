@@ -74,7 +74,7 @@ Um sistema completo para gerenciar suas tarefas diárias, com funcionalidades de
     ```bash
     npm run dev
     ```
-    O frontend será iniciado na porta `5000`.
+    O frontend será iniciado na porta `5173`.
 
 ## 🧪 Testes Unitários/Integração e Cobertura de Código
 O projeto utiliza **Jest** para testes de unidade e integração. Para rodar os testes localmente, siga os comandos abaixo:
