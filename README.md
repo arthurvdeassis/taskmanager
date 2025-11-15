@@ -98,12 +98,12 @@ O projeto também inclui testes **End-to-End (E2E)** usando o Cypress, garantind
 
 ### **Rodando os Testes E2E**
 
-#### 2. Instale o Cypress (se ainda não estiver instalado)
+#### 1. Instale o Cypress (se ainda não estiver instalado):
 
     cd frontend
     npm install --save-dev cypress
     
-#### 3. Execute o Cypress
+#### 3. Execute:
 ##### **Modo Interativo:**
 
     npx cypress open
