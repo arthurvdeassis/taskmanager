@@ -98,29 +98,24 @@ O projeto também inclui testes **End-to-End (E2E)** usando o Cypress, garantind
 
 ### **Rodando os Testes E2E**
 
-#### 1. Pré-requisitos
-
-- Clone o projeto e instale as dependências normalmente (backend e frontend já instalados).
-- Tenha o backend rodando (`npm run dev` na pasta `backend`).
-- Tenha o frontend rodando (`npm run dev` na pasta `frontend`).
-
 #### 2. Instale o Cypress (se ainda não estiver instalado)
-    ```
+
     cd frontend
     npm install --save-dev cypress
-    ```
+    
 #### 3. Execute o Cypress
 ##### **Modo Interativo:**
-    ```
+
     npx cypress open
-    ```
+
 A interface do Cypress abrirá. Selecione um navegador e escolha o arquivo de teste desejado para acompanhar os testes passo a passo.
 
 ##### **Modo Headless:**
-    ```
+
     npx cypress run
-    ```
+
 Os testes serão executados no terminal, útil para pipelines de CI ou execuções rápidas.
+
 #### 4. Estrutura dos testes
 
 - Os testes ficam na pasta `frontend/cypress/e2e`.
