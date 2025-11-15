@@ -35,11 +35,10 @@ Um sistema completo para gerenciar suas tarefas diárias, com funcionalidades de
 
 ### **Testes e Automação**
 - **Jest**: Framework de testes.
+- **Cypress**: Frameworks para testes end-to-end.
 - **Codecov**: Ferramenta de relatórios de cobertura de código.
 - **GitHub Actions**: Para automação do pipeline de CI/CD.
-
 ---
-
 ## ▶️ Como Rodar o Projeto
 
 ### **Pré-requisitos**
@@ -71,7 +70,6 @@ Um sistema completo para gerenciar suas tarefas diárias, com funcionalidades de
     cd frotend
     npm install
     ```
-
 5. **Inicie o frontend:**
     ```bash
     npm run dev
@@ -79,9 +77,7 @@ Um sistema completo para gerenciar suas tarefas diárias, com funcionalidades de
     O frontend será iniciado na porta `5000`.
 
 ## 🧪 Testes Unitários/Integração e Cobertura de Código
-
 O projeto utiliza **Jest** para testes de unidade e integração. Para rodar os testes localmente, siga os comandos abaixo:
-
 1. **Rodar os testes:**
     ```bash
     cd backend
@@ -109,19 +105,19 @@ O projeto também inclui testes **End-to-End (E2E)** usando o Cypress, garantind
 - Tenha o frontend rodando (`npm run dev` na pasta `frontend`).
 
 #### 2. Instale o Cypress (se ainda não estiver instalado)
-    ```bash
+    ```
     cd frontend
     npm install --save-dev cypress
     ```
 #### 3. Execute o Cypress
 ##### **Modo Interativo:**
-    ```bash
+    ```
     npx cypress open
     ```
 A interface do Cypress abrirá. Selecione um navegador e escolha o arquivo de teste desejado para acompanhar os testes passo a passo.
 
 ##### **Modo Headless:**
-    ```bash
+    ```
     npx cypress run
     ```
 Os testes serão executados no terminal, útil para pipelines de CI ou execuções rápidas.
